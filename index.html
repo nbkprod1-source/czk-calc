@@ -8,7 +8,8 @@
         body { font-family: sans-serif; display: flex; justify-content: center; padding: 20px; background-color: #f0f2f5; }
         .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
         .currency-group { margin-bottom: 15px; text-align: right; }
-        label { font-weight: bold; font-size: 14px; color: #333; display: block; margin-bottom: 5px; }
+        label { font-weight: bold; font-size: 15px; color: #333; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .flag { font-size: 22px; }
         input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 18px; box-sizing: border-box; }
         .status { font-size: 12px; margin-top: 15px; color: #555; line-height: 1.4; }
         .loading { color: #007bff; }
@@ -20,22 +21,22 @@
     <h2>המרה מעודכנת (Live)</h2>
 
     <div class="currency-group">
-        <label for="ILS">שקל חדש (ILS):</label>
+        <label for="ILS"><span class="flag">🇮🇱</span> שקל חדש (ILS):</label>
         <input type="number" id="ILS" placeholder="0" oninput="convert('ILS')">
     </div>
     
     <div class="currency-group">
-        <label for="CZK">קרונה צ'כית (CZK):</label>
+        <label for="CZK"><span class="flag">🇨🇿</span> קרונה צ'כית (CZK):</label>
         <input type="number" id="CZK" placeholder="0" oninput="convert('CZK')">
     </div>
 
     <div class="currency-group">
-        <label for="EUR">אירו (EUR):</label>
+        <label for="EUR"><span class="flag">🇪🇺</span> אירו (EUR):</label>
         <input type="number" id="EUR" placeholder="0" oninput="convert('EUR')">
     </div>
 
     <div class="currency-group">
-        <label for="USD">דולר ארה"ב (USD):</label>
+        <label for="USD"><span class="flag">🇺🇸</span> דולר ארה"ב (USD):</label>
         <input type="number" id="USD" placeholder="0" oninput="convert('USD')">
     </div>
 
@@ -43,10 +44,7 @@
 </div>
 
 <script>
-    // הגדרת אובייקט לאחסון השערים ביחס לשקל
     let rates = { ILS: 1, CZK: 0, EUR: 0, USD: 0 };
-    
-    // שערי גיבוי במקרה של שגיאת תקשורת
     const fallbackRates = { ILS: 1, CZK: 6.25, EUR: 0.25, USD: 0.27 }; 
 
     async function fetchRates() {
@@ -70,12 +68,11 @@
     }
 
     function convert(sourceCurrency) {
-        if (!rates.CZK) return; // ממתין לטעינת השערים לפני חישוב
+        if (!rates.CZK) return;
 
         const inputVal = parseFloat(document.getElementById(sourceCurrency).value);
         const currencies = ['ILS', 'CZK', 'EUR', 'USD'];
 
-        // ניקוי שדות אם הקלט נמחק
         if (isNaN(inputVal)) {
             currencies.forEach(currency => {
                 if (currency !== sourceCurrency) document.getElementById(currency).value = '';
@@ -83,10 +80,8 @@
             return;
         }
 
-        // המרה של ערך המקור לשקלים (בסיס החישוב)
         const baseIls = inputVal / rates[sourceCurrency];
 
-        // עדכון כל שאר השדות על בסיס הערך השקלי החדש
         currencies.forEach(currency => {
             if (currency !== sourceCurrency) {
                 document.getElementById(currency).value = (baseIls * rates[currency]).toFixed(2);
@@ -94,7 +89,6 @@
         });
     }
 
-    // קריאה ראשונית לשערים בעת טעינת הדף
     fetchRates();
 </script>
 
