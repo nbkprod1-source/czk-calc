@@ -3,12 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>מחשבון המרה חי - ש"ח לקרונה</title>
+    <title>מחשבון המרה חי - מט"ח</title>
     <style>
         body { font-family: sans-serif; display: flex; justify-content: center; padding: 20px; background-color: #f0f2f5; }
         .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 18px; box-sizing: border-box; }
-        .status { font-size: 14px; margin-top: 10px; color: #555; }
+        .currency-group { margin-bottom: 15px; text-align: right; }
+        label { font-weight: bold; font-size: 15px; color: #333; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .flag { font-size: 22px; }
+        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 18px; box-sizing: border-box; }
+        .status { font-size: 12px; margin-top: 15px; color: #555; line-height: 1.4; }
         .loading { color: #007bff; }
     </style>
 </head>
@@ -16,48 +19,77 @@
 
 <div class="card">
     <h2>המרה מעודכנת (Live)</h2>
+
+    <div class="currency-group">
+        <label for="ILS"><span class="flag">🇮🇱</span> שקל חדש (ILS):</label>
+        <input type="number" id="ILS" placeholder="0" oninput="convert('ILS')">
+    </div>
     
-    <label>שקל חדש (ILS):</label>
-    <input type="number" id="ils" placeholder="0" oninput="convert('ils')">
+    <div class="currency-group">
+        <label for="CZK"><span class="flag">🇨🇿</span> קרונה צ'כית (CZK):</label>
+        <input type="number" id="CZK" placeholder="0" oninput="convert('CZK')">
+    </div>
 
-    <label>קרונה צ'כית (CZK):</label>
-    <input type="number" id="czk" placeholder="0" oninput="convert('czk')">
+    <div class="currency-group">
+        <label for="EUR"><span class="flag">🇪🇺</span> אירו (EUR):</label>
+        <input type="number" id="EUR" placeholder="0" oninput="convert('EUR')">
+    </div>
 
-    <div id="status" class="status loading">מעדכן שער חליפין...</div>
+    <div class="currency-group">
+        <label for="USD"><span class="flag">🇺🇸</span> דולר ארה"ב (USD):</label>
+        <input type="number" id="USD" placeholder="0" oninput="convert('USD')">
+    </div>
+
+    <div id="status" class="status loading">מעדכן שערי חליפין...</div>
 </div>
 
 <script>
-    let exchangeRate = 0;
+    let rates = { ILS: 1, CZK: 0, EUR: 0, USD: 0 };
+    const fallbackRates = { ILS: 1, CZK: 6.25, EUR: 0.25, USD: 0.27 }; 
 
-    // פונקציה למשיכת השער מהאינטרנט
-    async function fetchRate() {
+    async function fetchRates() {
         try {
             const response = await fetch('https://open.er-api.com/v6/latest/ILS');
             const data = await response.json();
-            exchangeRate = data.rates.CZK;
-            document.getElementById('status').innerText = `שער נוכחי: 1 ש"ח = ${exchangeRate.toFixed(2)} קרונה`;
+            
+            rates.CZK = data.rates.CZK;
+            rates.EUR = data.rates.EUR;
+            rates.USD = data.rates.USD;
+            
+            document.getElementById('status').innerHTML = 
+                `<strong>שערים נוכחיים (עבור 1 ש"ח):</strong><br>` +
+                `${rates.CZK.toFixed(2)} CZK | ${rates.EUR.toFixed(2)} EUR | ${rates.USD.toFixed(2)} USD`;
+            document.getElementById('status').classList.remove('loading');
         } catch (error) {
-            exchangeRate = 6.25; // ברירת מחדל במקרה של שגיאת רשת
-            document.getElementById('status').innerText = "שגיאה בעדכון השער. משתמש בשער משוער: 6.25";
+            rates = fallbackRates;
+            document.getElementById('status').innerText = "שגיאה בעדכון. משתמש בשערים משוערים.";
             document.getElementById('status').style.color = "red";
         }
     }
 
-    function convert(source) {
-        if (!exchangeRate) return;
-        
-        const ilsInput = document.getElementById('ils');
-        const czkInput = document.getElementById('czk');
+    function convert(sourceCurrency) {
+        if (!rates.CZK) return;
 
-        if (source === 'ils') {
-            czkInput.value = ilsInput.value ? (ilsInput.value * exchangeRate).toFixed(2) : "";
-        } else {
-            ilsInput.value = czkInput.value ? (czkInput.value / exchangeRate).toFixed(2) : "";
+        const inputVal = parseFloat(document.getElementById(sourceCurrency).value);
+        const currencies = ['ILS', 'CZK', 'EUR', 'USD'];
+
+        if (isNaN(inputVal)) {
+            currencies.forEach(currency => {
+                if (currency !== sourceCurrency) document.getElementById(currency).value = '';
+            });
+            return;
         }
+
+        const baseIls = inputVal / rates[sourceCurrency];
+
+        currencies.forEach(currency => {
+            if (currency !== sourceCurrency) {
+                document.getElementById(currency).value = (baseIls * rates[currency]).toFixed(2);
+            }
+        });
     }
 
-    // קריאה לשער מיד עם טעינת הדף
-    fetchRate();
+    fetchRates();
 </script>
 
 </body>
