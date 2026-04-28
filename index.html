@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מחשבון המרה חי - ש"ח לקרונה</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; padding: 20px; background-color: #f0f2f5; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 18px; box-sizing: border-box; }
+        .status { font-size: 14px; margin-top: 10px; color: #555; }
+        .loading { color: #007bff; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>המרה מעודכנת (Live)</h2>
+    
+    <label>שקל חדש (ILS):</label>
+    <input type="number" id="ils" placeholder="0" oninput="convert('ils')">
+
+    <label>קרונה צ'כית (CZK):</label>
+    <input type="number" id="czk" placeholder="0" oninput="convert('czk')">
+
+    <div id="status" class="status loading">מעדכן שער חליפין...</div>
+</div>
+
+<script>
+    let exchangeRate = 0;
+
+    // פונקציה למשיכת השער מהאינטרנט
+    async function fetchRate() {
+        try {
+            const response = await fetch('https://open.er-api.com/v6/latest/ILS');
+            const data = await response.json();
+            exchangeRate = data.rates.CZK;
+            document.getElementById('status').innerText = `שער נוכחי: 1 ש"ח = ${exchangeRate.toFixed(2)} קרונה`;
+        } catch (error) {
+            exchangeRate = 6.25; // ברירת מחדל במקרה של שגיאת רשת
+            document.getElementById('status').innerText = "שגיאה בעדכון השער. משתמש בשער משוער: 6.25";
+            document.getElementById('status').style.color = "red";
+        }
+    }
+
+    function convert(source) {
+        if (!exchangeRate) return;
+        
+        const ilsInput = document.getElementById('ils');
+        const czkInput = document.getElementById('czk');
+
+        if (source === 'ils') {
+            czkInput.value = ilsInput.value ? (ilsInput.value * exchangeRate).toFixed(2) : "";
+        } else {
+            ilsInput.value = czkInput.value ? (czkInput.value / exchangeRate).toFixed(2) : "";
+        }
+    }
+
+    // קריאה לשער מיד עם טעינת הדף
+    fetchRate();
+</script>
+
+</body>
+</html>
